@@ -25,14 +25,16 @@ from safe_relay_service.version import __version__
 from .filters import DefaultPagination, SafeMultisigTxFilter
 from .models import EthereumEvent, SafeContract, SafeFunding, SafeMultisigTx
 from .serializers import (
-    ERC20Serializer, ERC721Serializer, SafeBalanceResponseSerializer,
-    SafeContractSerializer, SafeCreationResponseSerializer,
-    SafeCreationSerializer, SafeFundingResponseSerializer,
-    SafeMultisigEstimateTxResponseSerializer, SafeMultisigTxResponseSerializer,
-    SafeRelayMultisigTxSerializer, SafeResponseSerializer,
+    ERC20Serializer, ERC721Serializer, InfuraTxResponseSerializer,
+    InfuraTxSerializer, SafeBalanceResponseSerializer, SafeContractSerializer,
+    SafeCreationResponseSerializer, SafeCreationSerializer,
+    SafeFundingResponseSerializer, SafeMultisigEstimateTxResponseSerializer,
+    SafeMultisigTxResponseSerializer, SafeRelayMultisigTxSerializer,
+    SafeResponseSerializer,
     TransactionEstimationWithNonceAndGasTokensResponseSerializer)
 from .services import StatsServiceProvider
 from .services.funding_service import FundingServiceException
+from .services.infura_relay_service import InfuraRelayServiceProvider
 from .services.safe_creation_service import (SafeCreationServiceException,
                                              SafeCreationServiceProvider)
 from .services.transaction_service import (TransactionServiceException,
@@ -440,3 +442,25 @@ class PrivateSafesView(ListAPIView):
     permission_classes = (IsAuthenticated,)
     queryset = SafeContract.objects.deployed().order_by('created')
     serializer_class = SafeContractSerializer
+
+
+class InfuraRelayView(APIView):
+    def get_serializer_class(self):
+        return InfuraTxSerializer
+
+    @swagger_auto_schema(responses={201: InfuraTxResponseSerializer(),
+                                    400: 'Data not valid',
+                                    404: 'Safe not found',
+                                    422: 'Safe address checksum not valid/Tx not valid'})
+    def post(self, request, format=None):
+        serializer = self.get_serializer_class()(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
+        else:
+            data = serializer.validated_data
+            infura_tx_sent = InfuraRelayServiceProvider().send_transaction(
+                data['to'], data['data']
+            )
+            response_serializer = InfuraTxResponseSerializer(infura_tx_sent)
+            return Response(status=status.HTTP_201_CREATED, data=response_serializer.data)

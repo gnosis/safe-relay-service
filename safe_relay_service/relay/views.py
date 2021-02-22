@@ -76,11 +76,11 @@ class AboutView(APIView):
     renderer_classes = (JSONRenderer,)
 
     def get(self, request, format=None):
-        safe_funder_public_key = Account.from_key(settings.SAFE_FUNDER_PRIVATE_KEY).address \
+        safe_funder_address = Account.from_key(settings.SAFE_FUNDER_PRIVATE_KEY).address \
             if settings.SAFE_FUNDER_PRIVATE_KEY else None
-        safe_sender_public_key = Account.from_key(settings.SAFE_TX_SENDER_PRIVATE_KEY).address \
+        safe_sender_address = Account.from_key(settings.SAFE_TX_SENDER_PRIVATE_KEY).address \
             if settings.SAFE_TX_SENDER_PRIVATE_KEY else None
-        infura_relay_sender_public_key = Account.from_key(settings.INFURA_RELAY_SENDER_PRIVATE_KEY).address \
+        infura_relay_sender_address = Account.from_key(settings.INFURA_RELAY_SENDER_PRIVATE_KEY).address \
             if settings.INFURA_RELAY_SENDER_PRIVATE_KEY else None
         content = {
             'name': 'Safe Relay Service',
@@ -93,7 +93,7 @@ class AboutView(APIView):
                 'FIXED_GAS_PRICE': settings.FIXED_GAS_PRICE,
                 'GAS_STATION_NUMBER_BLOCKS': settings.GAS_STATION_NUMBER_BLOCKS,
                 'INFURA_NODE_URL': bool(settings.INFURA_NODE_URL),
-                'INFURA_RELAY_SENDER_PRIVATE_KEY': infura_relay_sender_public_key,
+                'INFURA_RELAY_SENDER_ADDRESS': infura_relay_sender_address,
                 'NOTIFICATION_SERVICE_PASS': bool(settings.NOTIFICATION_SERVICE_PASS),
                 'NOTIFICATION_SERVICE_URI': settings.NOTIFICATION_SERVICE_URI,
                 'SAFE_ACCOUNTS_BALANCE_WARNING': settings.SAFE_ACCOUNTS_BALANCE_WARNING,
@@ -103,12 +103,12 @@ class AboutView(APIView):
                 'SAFE_DEFAULT_CALLBACK_HANDLER': settings.SAFE_DEFAULT_CALLBACK_HANDLER,
                 'SAFE_FIXED_CREATION_COST': settings.SAFE_FIXED_CREATION_COST,
                 'SAFE_FUNDER_MAX_ETH': settings.SAFE_FUNDER_MAX_ETH,
-                'SAFE_FUNDER_PUBLIC_KEY': safe_funder_public_key,
+                'SAFE_FUNDER_ADDRESS': safe_funder_address,
                 'SAFE_FUNDING_CONFIRMATIONS': settings.SAFE_FUNDING_CONFIRMATIONS,
                 'SAFE_PROXY_FACTORY_ADDRESS': settings.SAFE_PROXY_FACTORY_ADDRESS,
                 'SAFE_PROXY_FACTORY_V1_0_0_ADDRESS': settings.SAFE_PROXY_FACTORY_V1_0_0_ADDRESS,
                 'SAFE_TX_NOT_MINED_ALERT_MINUTES': settings.SAFE_TX_NOT_MINED_ALERT_MINUTES,
-                'SAFE_TX_SENDER_PUBLIC_KEY': safe_sender_public_key,
+                'SAFE_TX_SENDER_ADDRESS': safe_sender_address,
                 'SAFE_V0_0_1_CONTRACT_ADDRESS': settings.SAFE_V0_0_1_CONTRACT_ADDRESS,
                 'SAFE_V1_0_0_CONTRACT_ADDRESS': settings.SAFE_V1_0_0_CONTRACT_ADDRESS,
                 'SAFE_VALID_CONTRACT_ADDRESSES': settings.SAFE_VALID_CONTRACT_ADDRESSES,

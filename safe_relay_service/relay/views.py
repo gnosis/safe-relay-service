@@ -34,7 +34,8 @@ from .serializers import (
     TransactionEstimationWithNonceAndGasTokensResponseSerializer)
 from .services import StatsServiceProvider
 from .services.funding_service import FundingServiceException
-from .services.infura_relay_service import InfuraRelayServiceProvider
+from .services.infura_relay_service import (InfuraRelayServiceException,
+                                            InfuraRelayServiceProvider)
 from .services.safe_creation_service import (SafeCreationServiceException,
                                              SafeCreationServiceProvider)
 from .services.transaction_service import (TransactionServiceException,
@@ -52,7 +53,7 @@ def custom_exception_handler(exc, context):
     # Now add the HTTP status code to the response.
     if not response:
         if isinstance(exc, (SafeServiceException, SafeCreationServiceException, TransactionServiceException,
-                            FundingServiceException)):
+                            FundingServiceException, InfuraRelayServiceException)):
             response = Response(status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         else:
             response = Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -67,6 +68,7 @@ def custom_exception_handler(exc, context):
                        context['request'].build_absolute_uri(),
                        exception_str,
                        context['request'].data)
+
     return response
 
 

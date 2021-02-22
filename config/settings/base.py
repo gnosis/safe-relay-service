@@ -285,8 +285,6 @@ REDIS_URL = env('REDIS_URL', default='redis://localhost:6379/0')
 # ------------------------------------------------------------------------------
 ETH_HASH_PREFIX = env('ETH_HASH_PREFIX', default='GNO')
 ETHEREUM_NODE_URL = env('ETHEREUM_NODE_URL', default=None)
-INFURA_NODE_URL = env('INFURA_NODE_URL', default=None)
-INFURA_RELAY_SENDER_PRIVATE_KEY = env('INFURA_RELAY_SENDER_PRIVATE_KEY', default=None)
 
 GAS_STATION_NUMBER_BLOCKS = env('GAS_STATION_NUMBER_BLOCKS', default=300)
 
@@ -332,3 +330,7 @@ TOKEN_LOGO_EXTENSION = env('TOKEN_LOGO_EXTENSION', default='.png')
 
 # Notifications
 SLACK_API_WEBHOOK = env('SLACK_API_WEBHOOK', default=None)
+
+# Infura
+INFURA_NODE_URL = env('INFURA_NODE_URL', default=None)
+INFURA_RELAY_SENDER_PRIVATE_KEY = env('INFURA_RELAY_SENDER_PRIVATE_KEY', default=SAFE_TX_SENDER_PRIVATE_KEY)

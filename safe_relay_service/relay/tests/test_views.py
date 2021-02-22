@@ -1,5 +1,7 @@
 import datetime
 import logging
+from unittest import mock
+from unittest.mock import MagicMock, PropertyMock
 
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -11,6 +13,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from gnosis.eth.constants import NULL_ADDRESS
+from gnosis.eth.ethereum_client import EthereumNetwork
 from gnosis.eth.utils import (get_eth_address_with_invalid_checksum,
                               get_eth_address_with_key)
 from gnosis.safe import SafeOperation, SafeTx
@@ -20,6 +23,7 @@ from safe_relay_service.gas_station.tests.factories import GasPriceFactory
 from safe_relay_service.tokens.tests.factories import TokenFactory
 
 from ..models import SafeContract, SafeMultisigTx
+from ..services.infura_relay_service import InfuraRelayService, ItxClient
 from .factories import (EthereumEventFactory, SafeContractFactory,
                         SafeCreation2Factory, SafeMultisigTxFactory)
 from .relay_test_case import RelayTestCaseMixin
@@ -687,3 +691,26 @@ class TestViews(RelayTestCaseMixin, APITestCase):
 
         response = self.client.get(reverse('v1:private-safes'), HTTP_AUTHORIZATION='Token ' + token)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @mock.patch.object(ItxClient, 'get_transaction_status', autospec=True)
+    @mock.patch.object(ItxClient, 'send_transaction', autospec=True)
+    @mock.patch.object(InfuraRelayService, 'estimate_gas', autospec=True)
+    @mock.patch.object(InfuraRelayService, 'ethereum_network', new_callable=PropertyMock)
+    def test_infura_txs_view(self, ethereum_network_mock: MagicMock, estimate_gas_mock: MagicMock,
+                             send_transaction_mock: MagicMock, get_transaction_status: MagicMock):
+        ethereum_network_mock.return_value = EthereumNetwork.RINKEBY
+        estimate_gas_mock.return_value = 300000
+        send_transaction_mock.return_value = '0x5aaf963acc5ec3ec64c6c954f617e6539663bacf42a73fce74bb0c8829088a8e'
+        get_transaction_status.return_value = {
+            'broadcastTime': '2021-02-15T16:28:47.978Z',
+            'ethTxHash': '0x5aaf963acc5ec3ec64c6c954f617e6539663bacf42a73fce74bb0c8829088a8e',
+            'gasPrice': '7290000028'
+        }
+        data = {
+            'to': InfuraRelayService.ALLOWED_ADDRESSES.get(EthereumNetwork.RINKEBY)[0],
+            'data': InfuraRelayService.EXECUTE_METHOD_ID.hex(),
+        }
+        response = self.client.post(reverse('v1:infura-txs'), format='json', data=data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['infura_tx_hash'], send_transaction_mock.return_value)
+        self.assertEqual(response.data['tx_hash'], get_transaction_status.return_value['ethTxHash'])

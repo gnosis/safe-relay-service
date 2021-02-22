@@ -32,6 +32,6 @@ urlpatterns = [
     path('stats/history/', views.StatsHistoryView.as_view(), name='stats-history'),
     path('private/api-token-auth/', rest_views.obtain_auth_token, name='api-token-auth'),
     path('private/safes/', views.PrivateSafesView.as_view(), name='private-safes'),
-    path('infura/transactions/', views.InfuraRelayView.as_view(), name='infura-transactions'),
+    path('infura/transactions/', views.InfuraRelayView.as_view(), name='infura-txs'),
 
 ]

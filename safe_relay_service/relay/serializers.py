@@ -70,7 +70,7 @@ class SafeRelayMultisigTxSerializer(SafeMultisigTxSerializer):
 
 
 class InfuraTxSerializer(serializers.Serializer):
-    to = EthereumAddressField(default=None, allow_null=True, allow_zero_address=True)
+    to = EthereumAddressField()
     data = HexadecimalField()
 
 

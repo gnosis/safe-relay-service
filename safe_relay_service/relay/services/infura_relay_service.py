@@ -125,16 +125,23 @@ class ItxClient:
         return response_json['result']
 
 
+class InfuraRelayServiceException(Exception):
+    pass
+
+
 class InfuraRelayServiceProvider:
     def __new__(cls):
         if not hasattr(cls, 'instance'):
             from django.conf import settings
+            from django.core.exceptions import ImproperlyConfigured
+            if not settings.INFURA_NODE_URL:
+                raise ImproperlyConfigured('INFURA_NODE_URL is missing')
             cls.instance = InfuraRelayService(settings.INFURA_NODE_URL, settings.INFURA_RELAY_SENDER_PRIVATE_KEY)
         return cls.instance
 
     @classmethod
     def del_singleton(cls):
-        if hasattr(cls, "instance"):
+        if hasattr(cls, 'instance'):
             del cls.instance
 
 
@@ -151,31 +158,42 @@ class InfuraRelayService:
         self.itx_client = ItxClient(infura_node_url)
 
     def allowed_addresses(self) -> Optional[List[ChecksumAddress]]:
-        return self.ALLOWED_ADDRESSES.get(self.ethereum_network, default=[])
+        return self.ALLOWED_ADDRESSES.get(self.ethereum_network, [])
 
     @cached_property
     def ethereum_network(self) -> EthereumNetwork:
         return self.ethereum_client.get_network()
+
+    def estimate_gas(self, to: ChecksumAddress, data: bytes):
+        """
+        :param to:
+        :param data:
+        :return: gas estimation
+        :raises:
+        """
+        try:
+            return self.ethereum_client.w3.eth.estimateGas({'to': to,
+                                                            'from': self.infura_relay_sender_account.address,
+                                                            'data': data,
+                                                            'value': 0})
+        except ValueError:
+            # ValueError: {'code': -32016, 'message': 'The execution failed due to an exception.',
+            #              'data': 'Reverted'}
+            raise InfuraRelayServiceException(f'Cannot estimate gas price for tx to={to} data={data.hex()}')
 
     def check_transaction(self, itx_relay_tx: ItxRelayTx) -> bool:
         if itx_relay_tx.to not in self.allowed_addresses():
             return False
         if itx_relay_tx.data[:4] != self.EXECUTE_METHOD_ID:
             return False
-        # TODO Check gas
         return True
 
     def send_transaction(self, to: ChecksumAddress, data: bytes) -> InfuraTxSent:
-        # Can raise ValueError: {'code': -32016, 'message': 'The execution failed due to an exception.',
-        #                        'data': 'Reverted'}
-        gas = self.ethereum_client.w3.eth.estimateGas({'to': to,
-                                                       'from': self.infura_relay_sender_account.address,
-                                                       'data': data,
-                                                       'value': 0})
-        itx_relay_tx = ItxRelayTx(to, data, gas)
+        gas = self.estimate_gas(to, data)
+        itx_relay_tx = ItxRelayTx(to, data, gas * 2)
         if self.check_transaction(itx_relay_tx):
             infura_tx_hash = self.itx_client.send_transaction(itx_relay_tx, self.infura_relay_sender_account)
             transaction_status = self.itx_client.get_transaction_status(infura_tx_hash)
             return InfuraTxSent(infura_tx_hash, transaction_status['ethTxHash'])
         else:
-            raise ValueError('Not valid tx to send using Infura relay')
+            raise InfuraRelayServiceException('Not valid tx to send using Infura relay')

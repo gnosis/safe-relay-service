@@ -80,6 +80,8 @@ class AboutView(APIView):
             if settings.SAFE_FUNDER_PRIVATE_KEY else None
         safe_sender_public_key = Account.from_key(settings.SAFE_TX_SENDER_PRIVATE_KEY).address \
             if settings.SAFE_TX_SENDER_PRIVATE_KEY else None
+        infura_relay_sender_public_key = Account.from_key(settings.INFURA_RELAY_SENDER_PRIVATE_KEY).address \
+            if settings.INFURA_RELAY_SENDER_PRIVATE_KEY else None
         content = {
             'name': 'Safe Relay Service',
             'version': __version__,
@@ -90,6 +92,8 @@ class AboutView(APIView):
                 'ETH_HASH_PREFIX ': settings.ETH_HASH_PREFIX,
                 'FIXED_GAS_PRICE': settings.FIXED_GAS_PRICE,
                 'GAS_STATION_NUMBER_BLOCKS': settings.GAS_STATION_NUMBER_BLOCKS,
+                'INFURA_NODE_URL': bool(settings.INFURA_NODE_URL),
+                'INFURA_RELAY_SENDER_PRIVATE_KEY': infura_relay_sender_public_key,
                 'NOTIFICATION_SERVICE_PASS': bool(settings.NOTIFICATION_SERVICE_PASS),
                 'NOTIFICATION_SERVICE_URI': settings.NOTIFICATION_SERVICE_URI,
                 'SAFE_ACCOUNTS_BALANCE_WARNING': settings.SAFE_ACCOUNTS_BALANCE_WARNING,

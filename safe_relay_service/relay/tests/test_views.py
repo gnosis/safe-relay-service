@@ -707,8 +707,8 @@ class TestViews(RelayTestCaseMixin, APITestCase):
             'gasPrice': '7290000028'
         }
         data = {
-            'to': InfuraRelayService.ALLOWED_ADDRESSES.get(EthereumNetwork.RINKEBY)[0],
-            'data': InfuraRelayService.EXECUTE_METHOD_ID.hex(),
+            'to': Account.create().address,
+            'data': '0x123456',
         }
         response = self.client.post(reverse('v1:infura-txs'), format='json', data=data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)

@@ -178,6 +178,12 @@ refunder_abi = [{'inputs': [{'internalType': 'contract Token',
                  'outputs': [],
                  'stateMutability': 'nonpayable',
                  'type': 'function'},
+                {'inputs': [{'internalType': 'address', 'name': 'target', 'type': 'address'},
+                            {'internalType': 'bytes', 'name': 'functionData', 'type': 'bytes'}],
+                 'name': 'executeTrusted',
+                 'outputs': [],
+                 'stateMutability': 'nonpayable',
+                 'type': 'function'},
                 {'inputs': [],
                  'name': 'fee',
                  'outputs': [{'internalType': 'uint256', 'name': '', 'type': 'uint256'}],
@@ -212,7 +218,7 @@ refunder_abi = [{'inputs': [{'internalType': 'contract Token',
 
 class InfuraRelayService:
     REFUNDER_ADDRESSES = {
-        EthereumNetwork.RINKEBY: ChecksumAddress('0x2d8cE02dd1644A9238e08430CaeA15a609503140'),
+        EthereumNetwork.RINKEBY: ChecksumAddress('0x0971BF033F429B6077b81911505c406Ffb8cde2c'),
     }
 
     def __init__(self, infura_node_url: str, infura_relay_sender_private_key: str):
@@ -231,7 +237,7 @@ class InfuraRelayService:
         return self.ethereum_client.w3.eth.contract(refunder_address, abi=refunder_abi)
 
     def build_refunder_transaction_data(self, to: ChecksumAddress, data: bytes) -> HexBytes:
-        return HexBytes(self.refunder_contract.functions.execute(to, data).buildTransaction(
+        return HexBytes(self.refunder_contract.functions.executeTrusted(to, data).buildTransaction(
             {'gas': 0, 'gasPrice': 0}
         )['data'])
 

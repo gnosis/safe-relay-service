@@ -285,4 +285,10 @@ class TransactionEstimationWithNonceAndGasTokensResponseSerializer(serializers.S
 
 class InfuraTxResponseSerializer(serializers.Serializer):
     infura_tx_hash = Sha3HashField()
-    tx_hash = Sha3HashField()
+    tx_hash = Sha3HashField(allow_null=True)
+
+
+class InfuraTxStatusResponseSerializer(serializers.Serializer):
+    broadcast_time = serializers.CharField()
+    eth_tx_hash = serializers.CharField()
+    gas_price = serializers.CharField()

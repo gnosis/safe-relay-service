@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from functools import cached_property
-from typing import List, Optional
+from typing import Optional, TypedDict
 
+import humps
 import requests
 from eth_abi import encode_abi
 from eth_account import Account
@@ -37,9 +38,16 @@ class ItxTransactionAlreadySent(ItxException):
 @dataclass
 class InfuraTxSent:
     infura_tx_hash: str
-    tx_hash: str
+    tx_hash: Optional[str]
 
 
+class ItxTxStatus(TypedDict):
+    broadcastTime: str  # '2021-02-15T16:28:47.978Z'
+    ethTxHash: str  # '0x5aaf963acc5ec3ec64c6c954f617e6539663bacf42a73fce74bb0c8829088a8e'
+    gasPrice: str  # '7290000028'
+
+
+# TODO Move this to EthereumClient on gnosis-py
 class ItxRelayTx:
     """
     Infura Relay Tx
@@ -79,21 +87,23 @@ class ItxClient:
             ]
         }).json()['result']) / 1e18
 
-    def get_transaction_status(self, relay_tx_hash: str):
+    def get_transaction_status(self, relay_tx_hash: str) -> Optional[ItxTxStatus]:
         """
         :param relay_tx_hash:
-        :return: Dictionary  {'broadcastTime': '2021-02-15T16:28:47.978Z',
-                              'ethTxHash': '0x5aaf963acc5ec3ec64c6c954f617e6539663bacf42a73fce74bb0c8829088a8e',
-                              'gasPrice': '7290000028'}
+        :return: Dictionary  {'broadcast_time': '2021-02-14T16:28:47.978Z',
+                              'eth_tx_hash': '0x1aaf963acc5ec3e164c6c954f617e6532663b2cf42a73fce74bb0c8829021a2f',
+                              'gas_price': '7290000028'}
         """
-        return requests.post(self.base_url, json={
+        response = requests.post(self.base_url, json={
             "id": "1",
             "jsonrpc": "2.0",
             "method": "relay_getTransactionStatus",
             "params": [
                 relay_tx_hash
             ]
-        }).json()['result'][0]
+        })
+        if result := response.json()['result']:
+            return humps.decamelize(result[0])
 
     def send_transaction(self, relay_tx: ItxRelayTx, account: Account) -> HexStr:
         """
@@ -242,10 +252,16 @@ class InfuraRelayService:
             #              'data': 'Reverted'}
             raise InfuraRelayServiceException(f'Cannot estimate gas price for tx to={to} data={data.hex()}') from exc
 
+    def get_transaction_status(self, infura_tx_hash: str):
+        return self.itx_client.get_transaction_status(infura_tx_hash)
+
     def send_transaction(self, to: ChecksumAddress, data: bytes) -> InfuraTxSent:
         refunder_transaction_data = self.build_refunder_transaction_data(to, data)
         gas = self.estimate_gas(self.refunder_contract.address, refunder_transaction_data)
         itx_relay_tx = ItxRelayTx(self.refunder_contract.address, refunder_transaction_data, gas * 2)
         infura_tx_hash = self.itx_client.send_transaction(itx_relay_tx, self.infura_relay_sender_account)
         transaction_status = self.itx_client.get_transaction_status(infura_tx_hash)
-        return InfuraTxSent(infura_tx_hash, transaction_status['ethTxHash'])
+        if transaction_status:
+            return InfuraTxSent(infura_tx_hash, transaction_status['eth_tx_hash'])
+        else:
+            return InfuraTxSent(infura_tx_hash, None)

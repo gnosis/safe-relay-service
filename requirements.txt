@@ -23,6 +23,7 @@ numpy==1.20.1
 packaging==20.9
 psycogreen==1.0.2
 psycopg2-binary==2.8.6
+pyhumps==1.6.1
 redis==3.5.3
 requests==2.25.1
 web3==5.17.0

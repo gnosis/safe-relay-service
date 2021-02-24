@@ -26,7 +26,8 @@ from .filters import DefaultPagination, SafeMultisigTxFilter
 from .models import EthereumEvent, SafeContract, SafeFunding, SafeMultisigTx
 from .serializers import (
     ERC20Serializer, ERC721Serializer, InfuraTxResponseSerializer,
-    InfuraTxSerializer, SafeBalanceResponseSerializer, SafeContractSerializer,
+    InfuraTxSerializer, InfuraTxStatusResponseSerializer,
+    SafeBalanceResponseSerializer, SafeContractSerializer,
     SafeCreationResponseSerializer, SafeCreationSerializer,
     SafeFundingResponseSerializer, SafeMultisigEstimateTxResponseSerializer,
     SafeMultisigTxResponseSerializer, SafeRelayMultisigTxSerializer,
@@ -452,7 +453,20 @@ class PrivateSafesView(ListAPIView):
 
 class InfuraRelayView(APIView):
     def get_serializer_class(self):
-        return InfuraTxSerializer
+        if self.request.method == 'GET':
+            return InfuraTxStatusResponseSerializer
+        elif self.request.method == 'POST':
+            return InfuraTxSerializer
+
+    @swagger_auto_schema(responses={200: InfuraTxStatusResponseSerializer(),
+                                    422: 'Safe address checksum not valid'})
+    def get(self, request, infura_tx_hash):
+        transaction_status = InfuraRelayServiceProvider().get_transaction_status(infura_tx_hash)
+        if not transaction_status:
+            return Response(status=status.HTTP_404_NOT_FOUND, data='Transaction not found')
+        else:
+            response_serializer = InfuraTxStatusResponseSerializer(transaction_status)
+            return Response(status=status.HTTP_200_OK, data=response_serializer.data)
 
     @swagger_auto_schema(responses={201: InfuraTxResponseSerializer(),
                                     400: 'Data not valid',

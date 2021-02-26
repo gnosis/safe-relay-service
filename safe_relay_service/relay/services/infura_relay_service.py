@@ -73,12 +73,12 @@ class ItxClient:
     """
     def __init__(self, infura_node_url: str):
         self.base_url = infura_node_url
-        self.http_session = requests.session()
+        self.http_session = requests.Session()
 
     def get_balance(self, address: ChecksumAddress):
         if not Web3.isChecksumAddress(address):
             raise ValueError(f'{address} is not a valid checksummed address')
-        return int(requests.post(self.base_url, json={
+        return int(self.http_session.post(self.base_url, json={
             "id": "1",
             "jsonrpc": "2.0",
             "method": "relay_getBalance",
@@ -94,7 +94,7 @@ class ItxClient:
                               'eth_tx_hash': '0x1aaf963acc5ec3e164c6c954f617e6532663b2cf42a73fce74bb0c8829021a2f',
                               'gas_price': '7290000028'}
         """
-        response = requests.post(self.base_url, json={
+        response = self.http_session.post(self.base_url, json={
             "id": "1",
             "jsonrpc": "2.0",
             "method": "relay_getTransactionStatus",
@@ -112,7 +112,7 @@ class ItxClient:
         :return: Infura tx identifier as str
         """
         signature = relay_tx.sign(account).signature.hex()
-        response = requests.post(self.base_url, json={
+        response = self.http_session.post(self.base_url, json={
             "id": "1",
             "jsonrpc": "2.0",
             "method": "relay_sendTransaction",

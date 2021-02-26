@@ -46,7 +46,7 @@ class GasStation:
                  constant_gas_increment: int = 1):  # Increase a little for fastest mining for API Calls
 
         self.http_provider_uri = http_provider_uri
-        self.http_session = requests.session()
+        self.http_session = requests.Session()
         self.number_of_blocks = number_of_blocks
         self.cache_timeout = cache_timeout_seconds
         self.constant_gas_increment = constant_gas_increment
